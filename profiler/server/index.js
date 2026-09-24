@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {randomBytes,createHash} from 'node:crypto';
 import {z} from 'zod';
 import {openDatabase} from './db.js';
-import {createAI,voicesForModel} from './ai.js';
+import {createAI,migrateStoredGrades,voicesForModel} from './ai.js';
 import {createGames,GameError} from './game.js';
 import {cases,publicCase} from './cases.js';
 import {chzzkRequest} from './chzzk.js';
@@ -14,7 +14,7 @@ export function configuration(env=process.env){
 const hash=s=>createHash('sha256').update(s).digest('hex');
 function cookie(req,name){return(req.headers.cookie||'').split(';').map(p=>p.trim()).find(p=>p.startsWith(`${name}=`))?.slice(name.length+1)||''}
 export async function createApp({config=configuration(),db,ai}={}){
-  db||=await openDatabase();ai||=createAI(config);const app=express(),games=createGames(db,ai),cookieOptions={httpOnly:true,secure:config.production,sameSite:'lax',path:'/',maxAge:7*86400000};
+  db||=await openDatabase();await migrateStoredGrades(db);ai||=createAI(config);const app=express(),games=createGames(db,ai),cookieOptions={httpOnly:true,secure:config.production,sameSite:'lax',path:'/',maxAge:7*86400000};
   app.disable('x-powered-by');app.set('trust proxy',1);app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'SAMEORIGIN','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"});if(config.production)res.set('Strict-Transport-Security','max-age=31536000');next()});app.use(express.json({limit:'24kb'}));
   app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(req.method!=='GET'&&(req.get('origin')!==config.base||!req.is('application/json')))return res.status(403).json({error:'같은 사이트에서 요청해 주세요.'});next()});
   const limits=new Map();const limit=(key,max,window=60000)=>{const now=Date.now(),s=limits.get(key);if(!s||s.until<now){limits.set(key,{count:1,until:now+window});return}if(s.count>=max)throw new GameError('요청이 많습니다. 잠시 후 다시 시도하세요.',429);s.count++};const cleanup=setInterval(()=>{for(const[k,v]of limits)if(v.until<Date.now())limits.delete(k);void Promise.all([db.run('DELETE FROM sessions WHERE expires_at<$1',[Date.now()]),db.run('DELETE FROM oauth_states WHERE expires_at<$1',[Date.now()])]).catch(()=>{})},60000);cleanup.unref();

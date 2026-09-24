@@ -10,15 +10,19 @@ export const reportSchema=z.object({
   strengths:z.array(z.string().min(1).max(500)).min(1).max(4),improvements:z.array(z.string().min(1).max(500)).min(1).max(4),
   moments:z.array(z.object({questionNumber:z.number().int().min(1).max(40),analysis:z.string().min(1).max(500)})).max(5)
 });
-export const gradeFor=score=>score>=85?'A':score>=70?'B':score>=50?'C':'D';
+export const gradeFor=score=>score>=80?'A':score>=60?'B':score>=40?'C':'D';
 export const isCorrect=r=>r.core.score>=24&&r.cause.score>=10&&r.sequence.score>=15&&r.core.score+r.cause.score+r.sequence.score+r.evidence.score>=60;
 export function finalizeReport(raw,questionCount){
   const r=reportSchema.parse(raw);
   if(r.moments.some(m=>m.questionNumber>questionCount))throw new Error('Invalid question reference');
   if(questionCount===0){r.process.score=0;r.moments=[]}
   const sum=['core','cause','sequence','evidence','process'].reduce((n,k)=>n+r[k].score,0);
-  const score=!isCorrect(r)?Math.min(sum,69):sum;
-  return {...r,rawScore:sum,score,grade:gradeFor(score),rubricVersion:'2.0',capped:score!==sum};
+  const score=!isCorrect(r)?Math.min(sum,59):sum;
+  return {...r,rawScore:sum,score,grade:gradeFor(score),rubricVersion:'2.1',capped:score!==sum};
+}
+export async function migrateStoredGrades(db){
+  const rows=await db.all("SELECT g.id,g.report,(SELECT a.correct FROM attempts a WHERE a.game_id=g.id ORDER BY a.created_at DESC,a.id DESC LIMIT 1) AS solved FROM games g WHERE g.status='completed' AND g.report IS NOT NULL");
+  for(const row of rows){try{const report=JSON.parse(row.report),raw=Number(report.rawScore??report.score);if(!Number.isFinite(raw))continue;const score=Number(row.solved)?raw:Math.min(raw,59),grade=gradeFor(score),next={...report,rawScore:raw,score,grade,rubricVersion:'2.1',capped:score!==raw};await db.run('UPDATE games SET report=$1,score=$2,grade=$3 WHERE id=$4',[JSON.stringify(next),score,grade,row.id])}catch{}}
 }
 export class AIError extends Error {constructor(message,status=503){super(message);this.status=status}}
 export function createAI(config){

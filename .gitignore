@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+data/
+*.sqlite*
+*.log
+profiler/.openai/
+artifacts/
+.DS_Store
+Thumbs.db
+.vscode/
+coverage/
+*.pem
+*.key
+*.p12
+*.pfx

@@ -55,6 +55,19 @@ const briefs=[
 '판매자의 포장 영상에는 한정판 시계가 분명히 들어 있었지만, 구매자가 연 상자에서는 같은 무게의 금속추만 나왔다. 배송 내내 무게는 같았고 보안 봉인도 멀쩡했다.',
 '동창회 기부금이 잠긴 보관함에서 사라졌다. 보관함이 열린 시각, 총무는 단체 사진 속에 자신이 있었다며 행사장을 떠날 수 없었다고 주장했다.'
 ];
+const hints={
+  'case-01':['금고가 파손되지 않았다면, 누가 열 수 있었는지보다 실제로 어떤 인증 기록이 남았는지부터 확인해 보세요.','가족들의 말보다 저녁 8시 25분부터 40분 사이 각자의 위치를 비교하면 비어 있는 동선이 보입니다.'],
+  'case-02':['작품이 수장고에 들어갔다는 사실과 그 뒤 무게가 줄어든 시각을 나누어 생각해 보세요.','출입문이 하나라면 카드 기록만으로 충분한지, 그 시각 무엇을 들고 나온 사람이 있었는지 확인해 보세요.'],
+  'case-03':['게시물이 공개된 시각과 사람이 직접 작성한 시각이 반드시 같지는 않습니다.','자정의 알리바이에서 잠시 벗어나, 자료실 PC가 실제로 조작된 시간을 물어보세요.'],
+  'case-04':['서랍이 다시 잠겨 있다는 사실은 열리지 않았다는 뜻이 아닙니다. 정식 열쇠의 기록을 확인해 보세요.','서재에서 물건을 몸에 숨기지 않고도 자연스럽게 들고 나올 수 있었던 도구를 살펴보세요.'],
+  'case-05':['묘목은 12분 만에 손상된 것이 아닙니다. 그 12분 동안 밤새 유지될 설정이 바뀌었을 가능성을 생각해 보세요.','화면에 보이는 자동 모드와 실제 난방·급수 출력이 같았는지, 현장에서만 바꿀 수 있는 설정이었는지 확인하세요.'],
+  'case-06':['같아 보이는 장비라도 일련번호는 다릅니다. 점검 직후와 경기 직전 사진을 비교해 보세요.','교체할 장비를 미리 준비했다면 정상 장비와 새 제품의 흔적이 어디에 남았을지 생각해 보세요.'],
+  'case-07':['창밖의 발자국이 없다는 것은 외부 침입 가능성을 줄여 줍니다. 분실 시간에 2층으로 올라간 사람을 먼저 좁혀 보세요.','담요는 단순한 심부름 물건이 아니라, 작은 보석을 보이지 않게 옮길 수 있는 수단이기도 합니다.'],
+  'case-08':['접속 기록의 계정 소유자와 실제로 키보드를 조작한 사람이 같다고 단정하지 마세요.','PD의 로그인 세션이 다른 기기에 남게 된 경위와, 삭제 시각 그 기기 앞에 누가 있었는지 확인해 보세요.'],
+  'case-09':['봉인이 멀쩡한지보다 처음 붙인 봉인과 도착한 봉인이 정말 같은 것인지 확인해 보세요.','무게가 변하지 않았다면 내용물을 뺀 사람이 비슷한 무게의 대체물을 미리 준비했을 가능성이 있습니다.'],
+  'case-10':['사진에 표시된 시각이 곧 실제 촬영 시각이라고 단정할 수 없습니다. 다른 시계와 비교해 보세요.','단체 사진을 찍은 뒤 보관함이 열리기 전까지의 11분 동안, 총무의 동선을 다시 구성해 보세요.']
+};
 export function publicCase(c){return {id:c.id,title:c.title,difficulty:c.difficulty,scene:briefs[Number(c.id.slice(-2))-1]}}
+export function hintFor(id,number){const hint=hints[id]?.[number-1];if(!hint)throw new Error('Unknown hint');return hint}
 export function solutionSummary(c){const p=c.people.find(p=>p.id===c.solution.culprit);const particle=(p.role.charCodeAt(p.role.length-1)-0xac00)%28===0?'가':'이';return {overview:`${p.role}${particle} ${c.solution.motive} ${c.solution.method}`,cause:c.solution.motive,sequence:c.solution.method,evidence:c.solution.evidence}}
 export function findCase(id){const c=cases.find(c=>c.id===id);if(!c)throw new Error('Unknown case');return c}

@@ -31,6 +31,7 @@ export async function createApp({config=configuration(),db,ai}={}){
   app.get('/api/games',auth,async(req,res)=>res.json({games:await games.list(req.user.id),totalCases:10}));
   app.post('/api/games',auth,async(req,res)=>{limit(`start:${req.user.id}`,15);const id=await games.start(req.user.id);res.json(await games.state(id,req.user.id))});
   app.get('/api/games/:id',auth,async(req,res)=>res.json(await games.state(req.params.id,req.user.id)));
+  app.get('/api/games/:id/hints/:number',auth,async(req,res)=>{limit(`hint:${req.user.id}`,20);const number=z.coerce.number().int().min(1).max(2).parse(req.params.number);res.json(await games.hint(req.params.id,req.user.id,number))});
   app.post('/api/games/:id/questions',auth,async(req,res)=>{limit(`ask:${req.user.id}`,15);const b=z.object({question:z.string().trim().min(2).max(600),requestId:z.string().uuid()}).parse(req.body);res.json(await games.ask(req.params.id,req.user.id,b.question,b.requestId))});
   app.post('/api/games/:id/submit',auth,async(req,res)=>{limit(`submit:${req.user.id}`,6);const b=z.object({answer:z.string().trim().min(10).max(5000),requestId:z.string().uuid()}).parse(req.body);res.json(await games.submit(req.params.id,req.user.id,b.answer,b.requestId))});
   app.get('/api/tts/:verdict',auth,async(req,res)=>{limit(`tts:${req.user.id}`,45);res.type('audio/mpeg').send(await ai.speech(req.params.verdict,req.query.voice?z.enum(voicesForModel(config.ttsModel)).parse(req.query.voice):config.ttsVoice))});

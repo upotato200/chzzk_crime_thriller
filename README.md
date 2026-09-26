@@ -49,11 +49,23 @@ AI는 문장 자체의 일치가 아니라 정답과 의미가 얼마나 가까�
 | `CHZZK_CLIENT_SECRET` | 치지직 개발자 앱 Client Secret |
 | `OPENAI_TTS_MODEL` | 선택, 기본 `gpt-4o-mini-tts` |
 | `OPENAI_TTS_VOICE` | 선택, 기본 `onyx` |
+| `GOOGLE_SITE_VERIFICATION` | 선택, Search Console HTML 태그의 `content` 값 |
 | `ALLOWED_CHANNEL_IDS` | 선택, 참여 허용할 채널 ID를 쉼표로 구분. 빈 값은 모든 인증 사용자 허용 |
 
 Railway가 주입하는 PORT에 맞춰 `0.0.0.0`으로 수신합니다. 단일 인스턴스로 구성되어 있습니다. 서버 메모리 요청 제한을 분산 배포에 쓰려면 공유 저장소 기반 제한으로 바꾸어야 합니다. PostgreSQL이 없으면 운영 서버는 시작하지 않습니다. 테스트 설정 `MOCK_AI=true` 또는 `ALLOW_DEV_LOGIN=true`는 운영 모드에서 시작을 차단합니다.
 
 GPT-5.6 Sol을 기본 모델로 사용하며, Responses API의 structured outputs와 low reasoning을 사용합니다. 사용 계정에서 해당 모델 접근 권한과 API 잔액이 필요합니다. 기본 키를 프런트엔드로 전달하지 않습니다. 키가 없는 환경에서 실제 모델의 의미 판정 품질은 검증할 수 없으므로, 배포 후 대표 정답·부분 정답·오답으로 실사용 확인을 권장합니다.
+
+## 검색엔진 등록
+
+서버는 `PUBLIC_URL`을 기준으로 canonical URL, Open Graph, JSON-LD, `/robots.txt`, `/sitemap.xml`을 생성합니다. API와 로그인 경로는 크롤링에서 제외하고 공개 게임 페이지와 사건 이미지 10개를 사이트맵에 포함합니다.
+
+1. [Google Search Console](https://search.google.com/search-console/)에서 **URL 접두어** 속성으로 실제 `PUBLIC_URL`을 추가합니다.
+2. HTML 태그 인증을 선택하고 `content="..."` 안의 값만 Railway의 `GOOGLE_SITE_VERIFICATION`에 저장한 뒤 재배포합니다.
+3. Search Console의 URL 검사에서 홈 주소의 색인 생성을 요청합니다.
+4. Sitemaps 메뉴에 `sitemap.xml`을 제출합니다.
+
+Railway 기본 도메인도 색인할 수 있지만 서비스 이름을 기억하기 쉽고 주소를 오래 유지하려면 자체 도메인을 연결하는 편이 좋습니다. 자체 도메인으로 변경할 때 Railway의 `PUBLIC_URL`, 치지직 로그인 리디렉션 URL과 Search Console 속성도 새 주소로 맞춥니다. 기존 주소와 새 주소를 동시에 운영한다면 하나를 대표 주소로 정하고 다른 주소에서 대표 주소로 영구 리디렉션하는 것이 좋습니다.
 
 ## 치지직 앱 설정
 
